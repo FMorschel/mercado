@@ -1,5 +1,5 @@
 #include "stm32f4xx.h"
-#include "nokia5110_LCD.h"
+#include "lcd.h"
 #include <string.h>
 
 #define BAUDGEN_INT 8  //! Divisor baudrate - parte inteira
@@ -63,6 +63,7 @@ typedef struct {
 	estado_contagem estado;
 } controle_t;
 
+char bufferLCD[84];
 controle_t controle = {
 		.contador = 0,
 		.valor_displays = {num0, num0},
@@ -163,13 +164,8 @@ int main(void)
 	NVIC_SetPriority(EXTI15_10_IRQn, 1); // Ajusta nivel de prioridade
 	NVIC_EnableIRQ(EXTI15_10_IRQn);		 // Habilita interrupcao - rotulo no
 
-	GPIOA -> MODER &=~ (GPIO_MODER_MODER4 | GPIO_MODER_MODER5 | GPIO_MODER_MODER6 | GPIO_MODER_MODER7 | GPIO_MODER_MODER8);
-	LCD_setRST(GPIOA, GPIO_ODR_ODR_4);
-	LCD_setCE(GPIOA, GPIO_ODR_ODR_5);
-	LCD_setDC(GPIOA, GPIO_ODR_ODR_6);
-	LCD_setDIN(GPIOA, GPIO_ODR_ODR_7);
-	LCD_setCLK(GPIOA, GPIO_ODR_ODR_8);
-	LCD_init();
+	// TODO: ver os pinos para ligar no LCD
+	LCD5110_init();
 	mensagemPadrao();
 
 	// Configurando funcoes alternativas
@@ -220,19 +216,23 @@ int main(void)
 }
 
 void mensagemPadrao(void) {
-	LCD_clrScr();
-	LCD_print("Passe os itens pelo", 0, 0);
-	LCD_print("infra-vermelho...", 0, 1);
+	LCD5110_clear();
+	LCD5110_set_XY(0, 0);
+	LCD5110_write_string("Passe os itens pelo");
+	LCD5110_set_XY(0, 2);
+	LCD5110_write_string("infra-vermelho...");
 }
 
 void paraEstadoContador(void) {
 	controle.estado = parada;
 	// Mostrar no lcd quantos itens passaram
-	LCD_clrScr();
-	LCD_print("Itens passados:", 0, 0);
-	LCD_printNumI(controle.contador, 0, 1);
+	LCD5110_clear();
+	LCD5110_set_XY(0, 0);
+	sprintf(bufferLCD, "Itens passados: %d", controle.contador);
+	LCD5110_write_string(bufferLCD);
 	if (controle.contador == 99) {
-		LCD_print("Limite atingido!", 0, 2);
+		LCD5110_set_XY(0, 2);
+		LCD5110_write_string("Limite atingido!");
 	}
 }
 
