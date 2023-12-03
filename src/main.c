@@ -1,5 +1,6 @@
 #include "stm32f4xx.h"
 #include "lcd.h"
+#include "lcd.c"
 #include <string.h>
 
 #define BAUDGEN_INT 8  //! Divisor baudrate - parte inteira
@@ -264,7 +265,7 @@ void sendSerial(char *str, int tamanho) {
 
 void sendNumeroSerial(int numero) {
 	char str[2];
-	sprinf(str, "%02d", numero);
+	sprintf(str, "%02d", numero);
 	sendSerial(str, 2);
 }
 
