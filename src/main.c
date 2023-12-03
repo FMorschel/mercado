@@ -144,7 +144,6 @@ int main(void)
 	NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
 	NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 0);
 
-	//TODO: definir pino infravermelho
 	GPIOC -> MODER &=~ GPIO_MODER_MODER9;
 
 	// PC13 como entrada
