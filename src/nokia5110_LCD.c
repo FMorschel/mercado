@@ -1,4 +1,5 @@
 #include "nokia5110_LCD.h"
+#include "stm32f4xx.h"
 
 struct LCD_att lcd;
 struct LCD_GPIO lcd_gpio;
