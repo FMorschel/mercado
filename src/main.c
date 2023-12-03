@@ -114,7 +114,7 @@ typedef enum {
 	atual,
 } estados_infra_opcao;
 
-uint8_t estados_infra[2] = {0, 0};
+uint8_t estadosInfra[2] = {0, 0};
 
 int main(void)
 {
@@ -187,22 +187,22 @@ int main(void)
 
 	while (1)
 	{
-		estados_infra[anterior] = estados_infra[atual];
+		estadosInfra[anterior] = estadosInfra[atual];
 		if (GPIOC->IDR & GPIO_IDR_IDR_9) {
-			estados_infra[atual] = 1;
-			if (estados_infra[atual] == 0) {
+			estadosInfra[atual] = 1;
+			if (estadosInfra[atual] == 0) {
 				for(int i = 0; i < 20000; i++);
 			}
 			if (GPIOC->IDR & GPIO_IDR_IDR_9) {
-				estados_infra[atual] = 1;
+				estadosInfra[atual] = 1;
 			} else {
-				estados_infra[atual] = 0;
+				estadosInfra[atual] = 0;
 			}
 		} else {
-			estados_infra[atual] = 0;
+			estadosInfra[atual] = 0;
 		}
 
-		if (estados_infra[atual] == 1 && estados_infra[anterior] == 0) {
+		if (estadosInfra[atual] == 1 && estadosInfra[anterior] == 0) {
 			setarValorDisplays(controle.contador + 1);
 			if (controle.contador == 99) {
 				paraEstadoContador();
