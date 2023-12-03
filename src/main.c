@@ -145,7 +145,7 @@ int main(void)
 	NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
 	NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 0);
 
-	GPIOC -> MODER &=~ GPIO_MODER_MODER9;
+	GPIOC -> MODER &=~ GPIO_MODER_MODER8;
 
 	// PC13 como entrada
 	GPIOC -> MODER &=~ GPIO_MODER_MODER13;
@@ -184,12 +184,12 @@ int main(void)
 	while (1)
 	{
 		estadosInfra[anterior] = estadosInfra[atual];
-		if (GPIOC->IDR & GPIO_IDR_IDR_9) {
+		if (GPIOC->IDR & GPIO_IDR_IDR_8) {
 			estadosInfra[atual] = 1;
 			if (estadosInfra[atual] == 0) {
 				for(int i = 0; i < 20000; i++);
 			}
-			if (GPIOC->IDR & GPIO_IDR_IDR_9) {
+			if (GPIOC->IDR & GPIO_IDR_IDR_8) {
 				estadosInfra[atual] = 1;
 			} else {
 				estadosInfra[atual] = 0;
