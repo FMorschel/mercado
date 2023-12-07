@@ -29,4 +29,4 @@ main.c:240:6:setarValorDisplays	16	static
 main.c:259:6:sendSerial	24	static
 main.c:266:6:sendNumeroSerial	24	static
 main.c:272:6:trocaDisplay	4	static
-main.c:289:6:ligarSegmentos	4	static
+main.c:293:6:ligarSegmentos	4	static

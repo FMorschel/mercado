@@ -241,8 +241,8 @@ void setarValorDisplays(uint8_t novo_valor) {
 	if (controle.estado == parada) return;
 	controle.contador = novo_valor;
 	if (novo_valor > 99) {
-		controle.valor_displays[0] = numZ;
-		controle.valor_displays[1] = numZ;
+		controle.valor_displays[0] = ~numZ;
+		controle.valor_displays[1] = ~numZ;
 	} else {
 		controle.valor_displays[0] = (numeros_t) (novo_valor / 10);
 		controle.valor_displays[1] = (numeros_t) (novo_valor % 10);
@@ -282,12 +282,19 @@ void trocaDisplay(void)
 		break;
 	}
 
-	GPIOB->ODR &= ~(display0 | display1); // arrumar multiplexa��o display
-	GPIOB->ODR |= controle.ligado_atual;
+	// Display Anodo
+	//GPIOB->ODR &= ~(display0 | display1); // arrumar multiplexa��o display
+	//GPIOB->ODR |= controle.ligado_atual;
+	//Display Catodo
+	GPIOB->ODR |= (display0 | display1); // arrumar multiplexa��o display
+	GPIOB->ODR &= ~controle.ligado_atual;
 }
 
 void ligarSegmentos(void)
 {
+	// Display Anodo
+	//GPIOB->ODR |= segmentosNoDisplay[numZ];
+	// Display Catodo
 	GPIOB->ODR &= ~segmentosNoDisplay[numZ];
 
 	switch (controle.ligado_atual)
