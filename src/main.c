@@ -8,7 +8,7 @@ typedef enum{
 	display_anodo,
 } display_t;
 
-#define DISPLAY display_catodo
+#define DISPLAY display_anodo
 
 #define BAUDGEN_INT 8  //! Divisor baudrate - parte inteira
 #define BAUDGEN_FRA 11 //! Divisor baudrate - parte fracionaria
@@ -290,17 +290,8 @@ void ligarSegmentos(void)
 		GPIOB->ODR &= ~segmentosNoDisplay[numZ];
 	}
 
-	if (DISPLAY == display_catodo){
-		switch (controle.ligado_atual)
-		{
-		case display0:
-			GPIOB->ODR |= segmentosNoDisplay[controle.valor_displays[0]];
-			break;
-		case display1:
-			GPIOB->ODR |= segmentosNoDisplay[controle.valor_displays[1]];
-			break;
-		}
-	} else {
+	if (DISPLAY == display_anodo)
+	{
 		switch (controle.ligado_atual)
 		{
 		case display0:
@@ -308,6 +299,18 @@ void ligarSegmentos(void)
 			break;
 		case display1:
 			GPIOB->ODR &= ~segmentosNoDisplay[controle.valor_displays[1]];
+			break;
+		}
+	}
+	else
+	{
+		switch (controle.ligado_atual)
+		{
+		case display0:
+			GPIOB->ODR |= segmentosNoDisplay[controle.valor_displays[0]];
+			break;
+		case display1:
+			GPIOB->ODR |= segmentosNoDisplay[controle.valor_displays[1]];
 			break;
 		}
 	}
