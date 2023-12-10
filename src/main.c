@@ -3,6 +3,13 @@
 #include "lcd.c"
 #include <string.h>
 
+typedef enum{
+	display_catodo,
+	display_anodo,
+} display_t;
+
+#define DISPLAY display_catodo
+
 #define BAUDGEN_INT 8  //! Divisor baudrate - parte inteira
 #define BAUDGEN_FRA 11 //! Divisor baudrate - parte fracionaria
 // Baud-rate em 115200
@@ -65,6 +72,7 @@ typedef struct {
 } controle_t;
 
 char bufferLCD[84];
+char dadoSerial = 0; // '\0'
 controle_t controle = {
 		.contador = 0,
 		.valor_displays = {num0, num0},
@@ -87,30 +95,6 @@ void TIM1_UP_TIM10_IRQHandler (void) // arrumar interrup��o
 	ligarSegmentos();
 }
 
-//! Manipulador interupcao externa pinos 10 a 15
-//! Utilizado rotulo original do arquivo startup_stm32f44x.s
-void EXTI15_10_IRQHandler(void)
-{
-	// Limpa o flag de interrupcao
-	EXTI->PR |= EXTI_PR_PR13; // Marca atendimento da interrupção
-
-	sendSerial("Botao pressionado!\n\r", 20);
-	if (controle.estado == ligada) {
-		if (controle.contador < 99) {
-			paraEstadoContador();
-			sendSerial("Contador parado!\n\r", 18);
-		} else {
-			setarValorDisplays(0);
-			sendSerial("Contador ja esta no limite!\n\r", 29);
-		}
-	} else {
-		controle.estado = ligada;
-		setarValorDisplays(0);
-		mensagemPadrao();
-		sendSerial("Contador iniciado!\n\r", 20);
-	}
-}
-
 typedef enum {
 	anterior,
 	atual,
@@ -120,6 +104,7 @@ uint8_t estadosInfra[2] = {0, 0};
 
 int main(void)
 {
+	void menu();
 	// ativando clocks gpios que ser�o ultilizados
 	RCC -> AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
 	RCC -> AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
@@ -148,23 +133,6 @@ int main(void)
 
 	GPIOC -> MODER &=~ GPIO_MODER_MODER8;
 
-	// PC13 como entrada
-	GPIOC -> MODER &=~ GPIO_MODER_MODER13;
-
-	// Selecionando PORT para a interrupção especifica
-	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;		  // configurando clock para SysCFG
-	SYSCFG->EXTICR[3] = SYSCFG_EXTICR4_EXTI13_PC; // Seleciona EXTI13 para port C
-
-	// Habilitando interrupção externa
-	EXTI->IMR |= EXTI_IMR_MR13; // Habilita interrupção externa
-	EXTI->RTSR |= EXTI_RTSR_TR13; // Habilita interrupção na borda de subida
-	EXTI->PR |= EXTI_PR_PR13; // Limpa flag de interrupção
-
-	// Habilitando interrupção no NVIC
-	// Rotulo original (EXTI15_10_IRQn) do arquivo stm32f466xx.h
-	NVIC_SetPriority(EXTI15_10_IRQn, 1); // Ajusta nivel de prioridade
-	NVIC_EnableIRQ(EXTI15_10_IRQn);		 // Habilita interrupcao - rotulo no
-
 	// TODO: ver os pinos para ligar no LCD
 	LCD5110_init();
 	mensagemPadrao();
@@ -181,6 +149,9 @@ int main(void)
 	USART2->CR2 = 0; // Um stop bit
 	USART2->CR3 = 0;
 	USART2->BRR = ((BAUDGEN_INT << 4) | BAUDGEN_FRA);
+
+	sendSerial("Sistema iniciado com sucesso!\n\r", 31);
+	menu();
 
 	while (1)
 	{
@@ -210,10 +181,28 @@ int main(void)
 
 		if (((USART2->SR) & USART_SR_RXNE)) // Recebeu byte ?
 		{
-			USART2->DR;
-			// Trata o byte recebido
+			//Limpar flag
+			USART2->SR &= ~USART_SR_RXNE;
+
+			dadoSerial = USART2->DR;
+
+			if (dadoSerial == '1') {
+				paraEstadoContador();
+			} else if (dadoSerial == '2') {
+				setarValorDisplays(0);
+			} else {
+				sendSerial("Comando invalido!\n\r", 19);
+				menu();
+			}
+
 		} // fim if byte recebido
 	}
+}
+
+void menu() {
+	void sendSerial(char *str, int tamanho);
+	sendSerial("Digite 1 para parar a contagem\n\r", 32);
+	sendSerial("Digite 2 para zerar a contagem\n\r", 32);
 }
 
 void mensagemPadrao(void) {
@@ -258,7 +247,8 @@ void setarValorDisplays(uint8_t novo_valor) {
 
 void sendSerial(char *str, int tamanho) {
 	for (int i = 0; i < tamanho; i++) {
-		while (!(USART2->SR & USART_SR_TXE));
+		// TODO: ver se precisa esperar
+		//while (!(USART2->SR & USART_SR_TXE));
 		USART2->DR = str[i];
 	}
 }
@@ -282,28 +272,43 @@ void trocaDisplay(void)
 		break;
 	}
 
-	// Display Anodo
-	//GPIOB->ODR &= ~(display0 | display1); // arrumar multiplexa��o display
-	//GPIOB->ODR |= controle.ligado_atual;
-	//Display Catodo
-	GPIOB->ODR |= (display0 | display1); // arrumar multiplexa��o display
-	GPIOB->ODR &= ~controle.ligado_atual;
+	if (DISPLAY == display_anodo) {
+		GPIOB->ODR &= ~(display0 | display1); // arrumar multiplexa��o display
+		GPIOB->ODR |= controle.ligado_atual;
+	} else {
+		GPIOB->ODR |= (display0 | display1); // arrumar multiplexa��o display
+		GPIOB->ODR &= ~controle.ligado_atual;
+	}
 }
 
 void ligarSegmentos(void)
 {
-	// Display Anodo
-	//GPIOB->ODR |= segmentosNoDisplay[numZ];
-	// Display Catodo
-	GPIOB->ODR &= ~segmentosNoDisplay[numZ];
-
-	switch (controle.ligado_atual)
+	if (DISPLAY == display_anodo)
 	{
-	case display0:
-		GPIOB->ODR|=segmentosNoDisplay[controle.valor_displays[0]];
-		break;
-	case display1:
-		GPIOB->ODR|=segmentosNoDisplay[controle.valor_displays[1]];
-		break;
+		GPIOB->ODR |= segmentosNoDisplay[numZ];
+	} else {
+		GPIOB->ODR &= ~segmentosNoDisplay[numZ];
+	}
+
+	if (DISPLAY == display_catodo){
+		switch (controle.ligado_atual)
+		{
+		case display0:
+			GPIOB->ODR |= segmentosNoDisplay[controle.valor_displays[0]];
+			break;
+		case display1:
+			GPIOB->ODR |= segmentosNoDisplay[controle.valor_displays[1]];
+			break;
+		}
+	} else {
+		switch (controle.ligado_atual)
+		{
+		case display0:
+			GPIOB->ODR &= ~segmentosNoDisplay[controle.valor_displays[0]];
+			break;
+		case display1:
+			GPIOB->ODR &= ~segmentosNoDisplay[controle.valor_displays[1]];
+			break;
+		}
 	}
 }
